@@ -19,7 +19,9 @@ if (id) {
   if (post?.authorId) {
     try {
       author = await authorAPI.getById(post.authorId);
-    } catch (_) {}
+    } catch (err) {
+      console.warn(`[BlogPage] Could not fetch author for post ${id}:`, err);
+    }
   }
 }
 

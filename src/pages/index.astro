@@ -1,11 +1,27 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/article/ArticleCard.astro';
+import { blogAPI } from '../utils/api';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const posts = await blogAPI.getAll(1, 12);
+const featuredPost = posts[0];
+const recentPosts = posts.slice(1, 7);
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<BaseLayout title="Home" description="Latest news and updates from around the world">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Featured Post -->
+    {featuredPost && (
+      <div class="mb-12">
+        <ArticleCard post={featuredPost} variant="featured" />
+      </div>
+    )}
+    
+    <!-- Recent Posts Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {recentPosts.map(post => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </div>
+</BaseLayout>

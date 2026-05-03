@@ -1,0 +1,103 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import VideoPlayer from '../../components/article/VideoPlayer.astro';
+import KeyTakeaways from '../../components/article/KeyTakeaways.astro';
+import TableOfContents from '../../components/article/TableOfContents.astro';
+import LikeButton from '../../components/islands/LikeButton';
+import ShareButtons from '../../components/islands/ShareButtons';
+import { BlogService } from '../../services/blogService';
+import { formatDate } from '../../utils/date';
+import { blogAPI } from '../../utils/api';
+
+export async function getStaticPaths() {
+  const posts = await blogAPI.getAll(1, 100);
+  return posts.map(post => ({
+    params: { slug: post?.slug },
+    props: { post }
+  }));
+}
+
+const { slug } = Astro.params;
+const post = await BlogService.getPostWithAuthor(slug);
+
+console.log('Fetched post:', post);
+---
+
+<BaseLayout 
+  title={post?.seoTitle || post?.title || 'Blog Post'} 
+  description={post?.seoDescription || post?.excerpt}
+  image={post?.coverImageUrl}
+  type="article"
+>
+  <article class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
+        <a href={`/category/${post?.category.toLowerCase()}`} class="text-red-600 font-semibold hover:underline">
+          {post?.category}
+        </a>
+        <span>•</span>
+        <!-- <time datetime={post?.createdAt}>{formatDate(post?.createdAt || "")}</time> -->
+        <span>•</span>
+        <span>{post?.readingTimeMinutes} min read</span>
+        {post?.location && (
+          <>
+            <span>•</span>
+            <span>📍 {post?.location}</span>
+          </>
+        )}
+      </div>
+      
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">{post?.title}</h1>
+      
+      <div class="flex items-center justify-between border-b pb-6">
+        <div class="flex items-center space-x-4">
+          {post?.author?.avatar && (
+            <img src={post?.author.avatar} alt={post?.author.name} class="w-12 h-12 rounded-full" />
+          )}
+          <div>
+            <div class="font-semibold">{post?.author?.name || 'Anonymous'}</div>
+            <div class="text-sm text-gray-500">{post?.author?.bio}</div>
+          </div>
+        </div>
+        
+        <div class="flex gap-4">
+          <LikeButton postId={post?.id || ""} client:load />
+          <ShareButtons url={Astro.url} title={post?.title || ""} client:load />
+        </div>
+      </div>
+    </header>
+    
+    <!-- Video Player -->
+    <VideoPlayer videoUrl={post?.videoUrl} title={post?.title || ""} />
+    
+    <!-- Cover Image (if no video) -->
+    {!post?.videoUrl && (
+      <img 
+        src={post?.coverImageUrl} 
+        alt={post?.title}
+        class="w-full rounded-lg shadow-lg mb-8"
+      />
+    )}
+    
+    <!-- Table of Contents -->
+    <TableOfContents toc={typeof post?.tableOfContents === 'string' ? JSON.parse(post?.tableOfContents || '[]') : (post?.tableOfContents || [])} />
+    
+    <!-- Content -->
+    <div class="prose prose-lg dark:prose-invert max-w-none">
+      {post?.content}
+    </div>
+    
+    <!-- Key Takeaways -->
+    <KeyTakeaways takeaways={typeof post?.keyTakeaways === 'string' ? JSON.parse(post?.keyTakeaways || '[]') : (post?.keyTakeaways || [])} />
+    
+    <!-- Tags -->
+    <div class="flex flex-wrap gap-2 mt-8 pt-8 border-t">
+      {post?.tags.map(tag => (
+        <a href={`/tags/${tag}`} class="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm hover:bg-gray-200">
+          #{tag}
+        </a>
+      ))}
+    </div>
+  </article>
+</BaseLayout>

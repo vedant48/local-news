@@ -1,0 +1,24 @@
+---
+interface Props {
+  toc: Array<{ id: string; title: string; level: number }>;
+}
+
+const { toc } = Astro.props;
+---
+
+{
+  toc && toc.length > 0 && (
+    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-8">
+      <h3 class="text-lg font-bold mb-4">Table of Contents</h3>
+      <ul class="space-y-2">
+        {toc.map(item => (
+          <li style={`margin-left: ${(item.level - 1) * 1}rem`}>
+            <a href={`#${item.id}`} class="text-blue-600 dark:text-blue-400 hover:underline">
+              {item.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

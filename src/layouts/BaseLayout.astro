@@ -1,0 +1,47 @@
+---
+// For Astro 6+, use ClientRouter instead of ViewTransitions
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+}
+
+const { title, description, image, type = 'website' } = Astro.props;
+const siteTitle = 'Modern News Blog';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description || siteTitle} />
+    <title>{title} | {siteTitle}</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description || siteTitle} />
+    <meta property="og:image" content={image || '/default-og-image.jpg'} />
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={siteTitle} />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description || siteTitle} />
+    <meta name="twitter:image" content={image || '/default-og-image.jpg'} />
+    
+    <!-- Canonical -->
+    <link rel="canonical" href={Astro.url} />
+    
+    <!-- Astro Client Router for SPA-like navigation -->
+    <ClientRouter />
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-900">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,31 @@
+---
+interface Props {
+  videoUrl?: string;
+  title: string;
+}
+
+const { videoUrl, title } = Astro.props;
+
+const getEmbedUrl = (url: string) => {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const videoId = url.split(/(?:youtube\.com\/watch\?v=|youtu\.be\/)/)[1]?.split(/[&?#]/)[0];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+---
+
+{
+  videoUrl && (
+    <div class="relative pb-[56.25%] h-0 rounded-lg overflow-hidden mb-8">
+      <iframe
+        src={getEmbedUrl(videoUrl)}
+        title={title}
+        class="absolute top-0 left-0 w-full h-full"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      />
+    </div>
+  )
+}

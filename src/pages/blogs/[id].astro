@@ -1,0 +1,161 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import VideoPlayer from '../../components/article/VideoPlayer.astro';
+import KeyTakeaways from '../../components/article/KeyTakeaways.astro';
+import TableOfContents from '../../components/article/TableOfContents.astro';
+import LikeButton from '../../components/islands/LikeButton';
+import ShareButtons from '../../components/islands/ShareButtons';
+import { blogAPI, authorAPI } from '../../utils/api';
+import { formatDate } from '../../utils/date';
+import { marked } from 'marked';
+
+const { id } = Astro.params;
+
+let post = null;
+let author = null;
+
+if (id) {
+  post = await blogAPI.getById(id);
+  if (post?.authorId) {
+    try {
+      author = await authorAPI.getById(post.authorId);
+    } catch (err) {
+      console.warn(`[BlogPage] Could not fetch author for post ${id}:`, err);
+    }
+  }
+}
+
+const contentHtml = post?.content ? marked.parse(post.content) : '';
+---
+
+<BaseLayout 
+  title={post?.seoTitle || post?.title || 'Blog Post'} 
+  description={post?.seoDescription || post?.excerpt}
+  image={post?.coverImageUrl}
+  type="article"
+>
+  {!post ? (
+    <div class="container mx-auto px-4 py-20 text-center">
+      <h1 class="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">Article Not Found</h1>
+      <p class="text-gray-600 dark:text-gray-400 mb-8">The article you're looking for doesn't exist or has been removed.</p>
+      <a href="/" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-medium">
+        Back to Home
+      </a>
+    </div>
+  ) : (
+    <article class="container mx-auto px-4 py-8 max-w-4xl">
+      <!-- Breadcrumb -->
+      <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6 flex items-center gap-2">
+        <a href="/" class="hover:text-red-600 transition">Home</a>
+        <span>›</span>
+        <a href={`/category/${post.category.toLowerCase()}`} class="hover:text-red-600 transition">{post.category}</a>
+        <span>›</span>
+        <span class="text-gray-700 dark:text-gray-300 line-clamp-1">{post.title}</span>
+      </nav>
+
+      <!-- Header -->
+      <header class="mb-8">
+        <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <span class="bg-red-600 text-white text-xs px-2 py-1 rounded font-semibold uppercase tracking-wide">
+            {post.category}
+          </span>
+          <span>•</span>
+          <time datetime={post.createdAt}>{formatDate(post.createdAt)}</time>
+          <span>•</span>
+          <span>{post.readingTimeMinutes} min read</span>
+          {post.location && (
+            <>
+              <span>•</span>
+              <span class="flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {post.location}
+              </span>
+            </>
+          )}
+        </div>
+        
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-gray-900 dark:text-gray-100">
+          {post.title}
+        </h1>
+
+        {post.excerpt && (
+          <p class="text-xl text-gray-600 dark:text-gray-400 mb-6 leading-relaxed border-l-4 border-red-600 pl-4">
+            {post.excerpt}
+          </p>
+        )}
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-b border-gray-200 dark:border-gray-700 py-4">
+          <div class="flex items-center gap-3">
+            {author?.avatar ? (
+              <img src={author.avatar} alt={author.name} class="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">
+                {(author?.name || 'A').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div class="font-semibold text-sm text-gray-900 dark:text-gray-100">{author?.name || 'Staff Reporter'}</div>
+              {author?.bio && <div class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{author.bio}</div>}
+            </div>
+          </div>
+          
+          <div class="flex gap-3">
+            <LikeButton postId={post.id} client:load />
+            <ShareButtons url={Astro.url} title={post.title} client:load />
+          </div>
+        </div>
+      </header>
+      
+      <!-- Video Player -->
+      <VideoPlayer videoUrl={post.videoUrl} title={post.title} />
+      
+      <!-- Cover Image (if no video) -->
+      {!post.videoUrl && post.coverImageUrl && (
+        <figure class="mb-8">
+          <img 
+            src={post.coverImageUrl} 
+            alt={post.title}
+            class="w-full rounded-xl shadow-lg object-cover max-h-[500px]"
+          />
+        </figure>
+      )}
+      
+      <!-- Table of Contents -->
+      <TableOfContents toc={typeof post.tableOfContents === 'string' ? JSON.parse(post.tableOfContents || '[]') : (post.tableOfContents || [])} />
+      
+      <!-- Content (rendered markdown) -->
+      <div class="prose-content text-gray-800 dark:text-gray-200" set:html={contentHtml} />
+      
+      <!-- Key Takeaways -->
+      <KeyTakeaways takeaways={typeof post.keyTakeaways === 'string' ? JSON.parse(post.keyTakeaways || '[]') : (post.keyTakeaways || [])} />
+      
+      <!-- Tags -->
+      {post.tags && post.tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mr-1">Tags:</span>
+          {post.tags.map(tag => (
+            <a
+              href={`/tags/${tag}`}
+              class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition"
+            >
+              #{tag}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <!-- Back link -->
+      <div class="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <a href="/" class="inline-flex items-center gap-2 text-red-600 dark:text-red-400 hover:underline font-medium">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to all articles
+        </a>
+      </div>
+    </article>
+  )}
+</BaseLayout>

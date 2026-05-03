@@ -1,6 +1,7 @@
 ---
-// For Astro 6+, use ClientRouter instead of ViewTransitions
 import { ClientRouter } from 'astro:transitions';
+import Header from '../components/common/Header.astro';
+import Footer from '../components/common/Footer.astro';
 import '../styles/global.css';
 
 export interface Props {
@@ -11,7 +12,7 @@ export interface Props {
 }
 
 const { title, description, image, type = 'website' } = Astro.props;
-const siteTitle = 'Modern News Blog';
+const siteTitle = 'LocalNews';
 ---
 
 <!DOCTYPE html>
@@ -40,8 +41,23 @@ const siteTitle = 'Modern News Blog';
     
     <!-- Astro Client Router for SPA-like navigation -->
     <ClientRouter />
+
+    <!-- Inline theme init to prevent flash of wrong theme -->
+    <script is:inline>
+      (function() {
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'dark' || (!stored && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
-  <body class="bg-gray-50 dark:bg-gray-900">
-    <slot />
+  <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <Header />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
   </body>
 </html>

@@ -59,6 +59,17 @@ export const blogAPI = {
     }
   },
 
+  getById: async (id: string): Promise<BlogPost | null> => {
+    try {
+      if (!id) throw new Error("Post ID is required");
+      const post = await fetchAPI<BlogPost>(`/blogs/${id}`);
+      return post || null;
+    } catch (error) {
+      console.error(`Error fetching post by id ${id}:`, error);
+      return null;
+    }
+  },
+
   getBySlug: async (slug: string): Promise<BlogPost | null> => {
     try {
       if (!slug || slug === "null") {

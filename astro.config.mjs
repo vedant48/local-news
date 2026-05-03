@@ -11,6 +11,7 @@ import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://local-news-pied.vercel.app',
   vite: {
     plugins: [tailwindcss()]
   },
